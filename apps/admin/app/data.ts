@@ -2,7 +2,7 @@
 import sortBy from "sort-by";
 
 type ContactMutation = {
-	id?: string;
+	id?: number;
 	first?: string;
 	last?: string;
 	avatar?: string;
@@ -12,8 +12,8 @@ type ContactMutation = {
 };
 
 export type ContactRecord = ContactMutation & {
-	id: string;
-	createdAt: string;
+	id: number;
+	created_at: string;
 };
 
 import { contacts, createDb } from "@no-notes/db";
@@ -42,7 +42,7 @@ export async function getDrizzleContacts(query?: string | null) {
 
 		return {
 			id: contact.id,
-			createdAt: new Date(contact.createdAt).toISOString(),
+			created_at: new Date(contact.created_at).toISOString(),
 			first,
 			last,
 			avatar: contact.avatar || undefined,
@@ -56,12 +56,10 @@ export async function getDrizzleContacts(query?: string | null) {
 }
 
 export async function createDrizzleEmptyContact() {
-	const id = Math.random().toString(36).substring(2, 9);
 	const newContact = await db
 		.insert(contacts)
 		.values({
-			id,
-			createdAt: new Date(),
+			created_at: new Date(),
 			name: "",
 			favorite: false,
 		})
@@ -69,7 +67,7 @@ export async function createDrizzleEmptyContact() {
 
 	return {
 		id: newContact[0].id,
-		createdAt: new Date(newContact[0].createdAt).toISOString(),
+		createdAt: new Date(newContact[0].created_at).toISOString(),
 		first: "",
 		last: "",
 		avatar: newContact[0].avatar || undefined,
@@ -79,7 +77,7 @@ export async function createDrizzleEmptyContact() {
 	};
 }
 
-export async function getDrizzleContact(id: string) {
+export async function getDrizzleContact(id: number) {
 	const contact = await db
 		.select()
 		.from(contacts)
@@ -93,7 +91,7 @@ export async function getDrizzleContact(id: string) {
 
 	return {
 		id: contact[0].id,
-		createdAt: new Date(contact[0].createdAt).toISOString(),
+		createdAt: new Date(contact[0].created_at).toISOString(),
 		first,
 		last,
 		avatar: contact[0].avatar || undefined,
@@ -104,7 +102,7 @@ export async function getDrizzleContact(id: string) {
 }
 
 export async function updateDrizzleContact(
-	id: string,
+	id: number,
 	updates: ContactMutation,
 ) {
 	const contact = await getDrizzleContact(id);
@@ -131,7 +129,7 @@ export async function updateDrizzleContact(
 	return getDrizzleContact(id);
 }
 
-export async function deleteDrizzleContact(id: string) {
+export async function deleteDrizzleContact(id: number) {
 	await db.delete(contacts).where(eq(contacts.id, id));
 	return null;
 }
@@ -164,8 +162,7 @@ async function initializeDrizzleData() {
 
 		for (const contact of sampleContacts) {
 			await db.insert(contacts).values({
-				id: Math.random().toString(36).substring(2, 9),
-				createdAt: new Date(),
+				created_at: new Date(),
 				name: contact.name,
 				avatar: contact.avatar,
 				twitter: contact.twitter,

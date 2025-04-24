@@ -1,6 +1,18 @@
 import { sql } from "drizzle-orm";
 import postgres from "postgres";
-import { contacts, gallery, exhibition, createDb } from "./index.js";
+import {
+	type NewArtist,
+	type NewContact,
+	type NewExhibition,
+	type NewExhibitionArtist,
+	type NewGallery,
+	artists,
+	contacts,
+	createDb,
+	exhibition,
+	exhibition_artists,
+	gallery,
+} from "./index.js";
 
 // PostgreSQL connection configuration
 const connectionString =
@@ -20,7 +32,7 @@ async function seed() {
 		// Ensure contacts table exists with proper schema
 		await db.execute(sql`
       CREATE TABLE IF NOT EXISTS contacts (
-        id VARCHAR(36) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         name TEXT NOT NULL,
         avatar TEXT,
@@ -33,7 +45,7 @@ async function seed() {
 		// Ensure gallery table exists with proper schema
 		await db.execute(sql`
       CREATE TABLE IF NOT EXISTS gallery (
-        id VARCHAR(36) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         name TEXT NOT NULL,
         url TEXT NOT NULL,
@@ -45,7 +57,7 @@ async function seed() {
 		// Ensure exhibition table exists with proper schema
 		await db.execute(sql`
       CREATE TABLE IF NOT EXISTS exhibition (
-        id VARCHAR(36) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT,
         start_date DATE,
@@ -54,17 +66,38 @@ async function seed() {
         private_view_end_date DATE,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        gallery_id VARCHAR(36) REFERENCES gallery(id),
+        gallery_id INT REFERENCES gallery(id),
         url TEXT,
         recommended BOOLEAN DEFAULT FALSE
       )
     `);
 
-		// Clear existing data
+		// Ensure artists table exists with proper schema
+		await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS artists (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        instagram_handle TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+
+		// Ensure exhibition_artists join table exists with proper schema
+		await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS exhibition_artists (
+        exhibition_id INT NOT NULL REFERENCES exhibition(id),
+        artist_id INT NOT NULL REFERENCES artists(id),
+        PRIMARY KEY (exhibition_id, artist_id)
+      )
+    `);
+
+		// Clear existing data in proper order to respect foreign keys
+		await db.delete(exhibition_artists);
 		await db.delete(exhibition);
+		await db.delete(artists);
 		await db.delete(gallery);
 		await db.delete(contacts);
-		console.log("Cleared existing contacts, gallery, and exhibition data");
+		console.log("Cleared existing data from all tables");
 	} catch (error) {
 		console.error("Error setting up tables:", error);
 	}
@@ -144,16 +177,12 @@ async function seed() {
 	try {
 		// Insert contacts
 		for (const contact of contactsData) {
-			const id = `${contact.first.toLowerCase().split(" ").join("_")}-${contact.last.toLowerCase()}`;
-
 			await db.insert(contacts).values({
-				id,
-				createdAt: new Date(),
 				name: `${contact.first} ${contact.last}`,
 				avatar: contact.avatar,
 				twitter: contact.twitter,
 				favorite: false,
-			});
+			} satisfies NewContact);
 
 			console.log(`Added contact: ${contact.first} ${contact.last}`);
 		}
@@ -165,34 +194,42 @@ async function seed() {
 				name: "Nature Collection",
 				url: "https://example.com/gallery/nature",
 				description: "Beautiful nature photographs from around the world",
-				recommended: true
+				recommended: true,
 			},
 			{
 				id: "gallery-2",
 				name: "Urban Landscapes",
 				url: "https://example.com/gallery/urban",
 				description: "City scenes and architecture",
-				recommended: false
+				recommended: false,
 			},
 			{
 				id: "gallery-3",
 				name: "Abstract Art",
 				url: "https://example.com/gallery/abstract",
 				description: "Modern abstract art pieces",
-				recommended: true
-			}
+				recommended: true,
+			},
 		];
 
 		// Insert gallery items
+		const galleryMap: Record<string, number> = {}; // To track generated IDs
+
 		for (const item of galleryData) {
-			await db.insert(gallery).values({
-				id: item.id,
-				createdAt: new Date(),
-				name: item.name,
-				url: item.url,
-				description: item.description,
-				recommended: item.recommended
-			});
+			const result = await db
+				.insert(gallery)
+				.values({
+					created_at: new Date(),
+					name: item.name,
+					url: item.url,
+					description: item.description,
+					recommended: item.recommended,
+				} satisfies NewGallery)
+				.returning({ id: gallery.id });
+
+			// Store the mapping from the original ID to the generated one
+			galleryMap[item.id] = result[0].id;
+			console.log(`Mapped ${item.id} to actual ID: ${result[0].id}`);
 
 			console.log(`Added gallery item: ${item.name}`);
 		}
@@ -203,58 +240,139 @@ async function seed() {
 				id: "exhibition-1",
 				name: "Modern Masters",
 				description: "A collection of works by contemporary masters",
-				startDate: "2025-05-01",
-				endDate: "2025-06-30",
-				privateViewStartDate: "2025-04-28",
-				privateViewEndDate: "2025-04-30",
-				galleryId: "gallery-1",
+				start_date: "2025-05-01",
+				end_date: "2025-06-30",
+				private_view_start_date: "2025-04-28",
+				private_view_end_date: "2025-04-30",
+				gallery_id: "gallery-1",
 				url: "https://example.com/exhibitions/modern-masters",
-				recommended: true
+				recommended: true,
 			},
 			{
 				id: "exhibition-2",
 				name: "Urban Perspectives",
 				description: "Exploring city life through various art forms",
-				startDate: "2025-07-15",
-				endDate: "2025-09-10",
-				privateViewStartDate: "2025-07-12",
-				privateViewEndDate: "2025-07-14",
-				galleryId: "gallery-2",
+				start_date: "2025-07-15",
+				end_date: "2025-09-10",
+				private_view_start_date: "2025-07-12",
+				private_view_end_date: "2025-07-14",
+				gallery_id: "gallery-2",
 				url: "https://example.com/exhibitions/urban-perspectives",
-				recommended: false
+				recommended: false,
 			},
 			{
 				id: "exhibition-3",
 				name: "Abstract Expressions",
 				description: "A journey through abstract expressionism",
-				startDate: "2025-10-01",
-				endDate: "2025-11-30",
-				privateViewStartDate: "2025-09-28",
-				privateViewEndDate: "2025-09-30",
-				galleryId: "gallery-3",
+				start_date: "2025-10-01",
+				end_date: "2025-11-30",
+				private_view_start_date: "2025-09-28",
+				private_view_end_date: "2025-09-30",
+				gallery_id: "gallery-3",
 				url: "https://example.com/exhibitions/abstract-expressions",
-				recommended: true
-			}
+				recommended: true,
+			},
 		];
 
 		// Insert exhibition items
+		const exhibitionMap: Record<string, number> = {}; // To track generated IDs
+
 		for (const item of exhibitionData) {
-			await db.insert(exhibition).values({
-				id: item.id,
-				name: item.name,
-				description: item.description,
-				startDate: new Date(item.startDate),
-				endDate: new Date(item.endDate),
-				privateViewStartDate: new Date(item.privateViewStartDate),
-				privateViewEndDate: new Date(item.privateViewEndDate),
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				galleryId: item.galleryId,
-				url: item.url,
-				recommended: item.recommended
-			});
+			const result = await db
+				.insert(exhibition)
+				.values({
+					name: item.name,
+					description: item.description,
+					start_date: new Date(item.start_date),
+					end_date: new Date(item.end_date),
+					private_view_start_date: new Date(item.private_view_start_date),
+					private_view_end_date: new Date(item.private_view_end_date),
+					created_at: new Date(),
+					updated_at: new Date(),
+					gallery_id: galleryMap[item.gallery_id],
+					url: item.url,
+					recommended: item.recommended,
+				} satisfies NewExhibition)
+				.returning({ id: exhibition.id });
+
+			// Store the mapping from the original ID to the generated one
+			exhibitionMap[item.id] = result[0].id;
+			console.log(`Mapped ${item.id} to actual ID: ${result[0].id}`);
 
 			console.log(`Added exhibition: ${item.name}`);
+		}
+
+		// Sample artists data
+		const artistsData = [
+			{
+				id: "artist-1",
+				name: "Jane Smith",
+				instagram_handle: "@janesmith_art",
+			},
+			{
+				id: "artist-2",
+				name: "John Doe",
+				instagram_handle: "@johndoe_creates",
+			},
+			{
+				id: "artist-3",
+				name: "Alex Johnson",
+				instagram_handle: "@alexj_artist",
+			},
+			{
+				id: "artist-4",
+				name: "Maria Garcia",
+				instagram_handle: "@maria_garcia_art",
+			},
+			{
+				id: "artist-5",
+				name: "David Kim",
+				instagram_handle: "@david_kim_studio",
+			},
+		];
+
+		// Insert artists
+		const artistMap: Record<string, number> = {}; // To track generated IDs
+
+		for (const artist of artistsData) {
+			const result = await db
+				.insert(artists)
+				.values({
+					name: artist.name,
+					instagram_handle: artist.instagram_handle,
+					created_at: new Date(),
+				} satisfies NewArtist)
+				.returning({ id: artists.id });
+
+			// Store the mapping from the original ID to the generated one
+			artistMap[artist.id] = result[0].id;
+			console.log(`Mapped ${artist.id} to actual ID: ${result[0].id}`);
+
+			console.log(`Added artist: ${artist.name}`);
+		}
+
+		// Sample exhibition-artist relationships
+		const exhibitionArtistsData = [
+			{ exhibition_id: "exhibition-1", artist_id: "artist-1" },
+			{ exhibition_id: "exhibition-1", artist_id: "artist-2" },
+			{ exhibition_id: "exhibition-2", artist_id: "artist-2" },
+			{ exhibition_id: "exhibition-2", artist_id: "artist-3" },
+			{ exhibition_id: "exhibition-2", artist_id: "artist-4" },
+			{ exhibition_id: "exhibition-3", artist_id: "artist-1" },
+			{ exhibition_id: "exhibition-3", artist_id: "artist-3" },
+			{ exhibition_id: "exhibition-3", artist_id: "artist-5" },
+		];
+
+		// Insert exhibition-artist relationships
+		for (const relation of exhibitionArtistsData) {
+			await db.insert(exhibition_artists).values({
+				exhibition_id: exhibitionMap[relation.exhibition_id],
+				artist_id: artistMap[relation.artist_id],
+			} satisfies NewExhibitionArtist);
+
+			console.log(
+				`Added relationship: Exhibition ${exhibitionMap[relation.exhibition_id]} - Artist ${artistMap[relation.artist_id]}`,
+			);
 		}
 
 		console.log("Database seeded successfully!");
