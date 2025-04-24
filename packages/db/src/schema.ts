@@ -1,3 +1,5 @@
+import type { SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	integer,
@@ -86,3 +88,7 @@ export type Artist = typeof artists.$inferSelect;
 export type NewArtist = typeof artists.$inferInsert;
 export type ExhibitionArtist = typeof exhibition_artists.$inferSelect;
 export type NewExhibitionArtist = typeof exhibition_artists.$inferInsert;
+
+export function lower(exhibition: Exhibition): SQL {
+	return sql`lower(${exhibition.name})`;
+}

@@ -5,6 +5,7 @@
 		"clientKind": "git",
 		"useIgnoreFile": false
 	},
+
 	"files": {
 		"ignoreUnknown": false,
 		"ignore": []
@@ -18,7 +19,12 @@
 	},
 	"linter": {
 		"enabled": true,
+
 		"rules": {
+			"a11y": {
+				"useSemanticElements": "off",
+				"useButtonType": "off"
+			},
 			"recommended": true,
 			"correctness": {
 				"noUnusedImports": "error"
