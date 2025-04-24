@@ -1,14 +1,14 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, boolean, varchar } from 'drizzle-orm/pg-core';
 
 // Define the contacts table
-export const contacts = sqliteTable('contacts', {
-  id: text('id').primaryKey(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+export const contacts = pgTable('contacts', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
   name: text('name').notNull(),
   avatar: text('avatar'),
   twitter: text('twitter'),
   notes: text('notes'),
-  favorite: integer('favorite', { mode: 'boolean' }).default(false),
+  favorite: boolean('favorite').default(false),
 });
 
 // Define types based on the schema

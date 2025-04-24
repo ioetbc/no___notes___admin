@@ -1,26 +1,43 @@
-import { sql } from 'drizzle-orm';
 import { createDb, contacts } from './index.js';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { sql } from 'drizzle-orm';
+import postgres from 'postgres';
 
-const db = createDb();
+// PostgreSQL connection configuration
+const connectionString = process.env.DATABASE_URL || 
+  `postgres://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'no_notes_admin'}`;
+
+// Use a direct connection for migrations
+const migrationClient = postgres(connectionString, { max: 1 });
+const migrationDb = drizzle(migrationClient);
 
 async function seed() {
   console.log('Seeding database with contacts...');
+
+  // Get the regular DB connection for data operations
+  const db = createDb();
   
-  // First, create the contacts table if it doesn't exist
-  await db.run(sql`
-    CREATE TABLE IF NOT EXISTS contacts (
-      id TEXT PRIMARY KEY,
-      created_at INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      avatar TEXT,
-      twitter TEXT,
-      notes TEXT,
-      favorite INTEGER DEFAULT 0
-    )
-  `);
-  
-  // Clear existing data
-  await db.delete(contacts);
+  try {
+    // Ensure table exists with proper schema
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS contacts (
+        id VARCHAR(36) PRIMARY KEY,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        name TEXT NOT NULL,
+        avatar TEXT,
+        twitter TEXT,
+        notes TEXT,
+        favorite BOOLEAN DEFAULT FALSE
+      )
+    `);
+    
+    // Clear existing data
+    await db.delete(contacts);
+    console.log('Cleared existing contacts data');
+  } catch (error) {
+    console.error('Error setting up table:', error);
+  }
   
   // Original contact data from data.ts
   const contactsData = [
@@ -84,25 +101,38 @@ async function seed() {
     }
   ];
   
-  // Insert contacts
-  for (const contact of contactsData) {
-    const id = `${contact.first.toLowerCase().split(" ").join("_")}-${contact.last.toLowerCase()}`;
+  try {
+    // Insert contacts
+    for (const contact of contactsData) {
+      const id = `${contact.first.toLowerCase().split(" ").join("_")}-${contact.last.toLowerCase()}`;
+      
+      await db.insert(contacts).values({
+        id,
+        createdAt: new Date(),
+        name: `${contact.first} ${contact.last}`,
+        avatar: contact.avatar,
+        twitter: contact.twitter,
+        favorite: false
+      });
+      
+      console.log(`Added contact: ${contact.first} ${contact.last}`);
+    }
     
-    await db.insert(contacts).values({
-      id,
-      createdAt: new Date(),
-      name: `${contact.first} ${contact.last}`,
-      avatar: contact.avatar,
-      twitter: contact.twitter,
-      favorite: false
-    });
-    
-    console.log(`Added contact: ${contact.first} ${contact.last}`);
+    console.log('Database seeded successfully!');
+  } catch (error) {
+    console.error('Error inserting data:', error);
+    throw error;
+  } finally {
+    // Close the client
+    if (migrationClient) {
+      await migrationClient.end();
+    }
+    // Exit the process
+    process.exit(0);
   }
-  
-  console.log('Database seeded successfully!');
 }
 
+// Run the seed function
 seed().catch(e => {
   console.error('Error seeding database:', e);
   process.exit(1);
