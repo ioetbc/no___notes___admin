@@ -1,7 +1,7 @@
 {
 	"name": "admin",
 	"private": true,
-	"type": "commonjs",
+	"type": "module",
 	"scripts": {
 		"build": "cross-env NODE_ENV=production react-router build",
 		"dev": "react-router dev",

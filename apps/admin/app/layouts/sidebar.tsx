@@ -7,20 +7,20 @@ import {
 	useNavigation,
 	useSubmit,
 } from "react-router";
-import { getContacts } from "../data";
+import { getExhibitions } from "../data";
 import type { Route } from "./+types/sidebar";
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const url = new URL(request.url);
 	const q = url.searchParams.get("q");
-	const contacts = await getContacts(q);
-	return { contacts, q };
+	const exhibitions = await getExhibitions(q);
+	return { exhibitions, q };
 }
 
 export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
 	const navigation = useNavigation();
 	const submit = useSubmit();
-	const { contacts, q } = loaderData;
+	const { exhibitions, q } = loaderData;
 
 	const searching =
 		navigation.location &&
@@ -37,7 +37,7 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
 		<>
 			<div id="sidebar">
 				<h1>
-					<Link to="about">React Router Contacts</Link>
+					<Link to="about">Exhibition Finder</Link>
 				</h1>
 				<div>
 					<Form
@@ -53,7 +53,7 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
 						<input
 							defaultValue={q || ""}
 							className={searching ? "loading" : ""}
-							aria-label="Search contacts"
+							aria-label="Search exhibitions"
 							id="q"
 							name="q"
 							placeholder="Search"
@@ -66,31 +66,29 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
 					</Form>
 				</div>
 				<nav>
-					{contacts.length ? (
+					{exhibitions.length ? (
 						<ul>
-							{contacts.map((contact) => (
-								<li key={contact.id}>
+							{exhibitions.map((exhibition) => (
+								<li key={exhibition.id}>
 									<NavLink
 										className={({ isActive, isPending }) =>
 											isActive ? "active" : isPending ? "pending" : ""
 										}
-										to={`contacts/${contact.id}`}
+										to={`exhibitions/${exhibition.id}`}
 									>
-										{contact.first || contact.last ? (
-											<>
-												{contact.first} {contact.last}
-											</>
+										{exhibition.name ? (
+											<>{exhibition.name}</>
 										) : (
-											<i>No Name</i>
+											<i>Untitled Exhibition</i>
 										)}
-										{contact.favorite ? <span>★</span> : null}
+										{exhibition.recommended ? <span>★</span> : null}
 									</NavLink>
 								</li>
 							))}
 						</ul>
 					) : (
 						<p>
-							<i>No contacts</i>
+							<i>No exhibitions</i>
 						</p>
 					)}
 				</nav>

@@ -1,28 +1,111 @@
 // @ts-expect-error - no types, but it's a tiny function
 import sortBy from "sort-by";
 
-type ContactMutation = {
+import { type Exhibition, contacts, createDb, exhibition } from "@no-notes/db";
+import { eq, ilike, like } from "drizzle-orm";
+
+// Type definitions
+type ExhibitionMutation = {
 	id?: number;
-	first?: string;
-	last?: string;
-	avatar?: string;
-	twitter?: string;
-	notes?: string;
-	favorite?: boolean;
+	name?: string;
+	description?: string;
+	url?: string;
+	gallery_id?: number;
+	recommended?: boolean;
 };
 
-export type ContactRecord = ContactMutation & {
+export type ExhibitionRecord = ExhibitionMutation & {
 	id: number;
 	created_at: string;
 };
 
-import { contacts, createDb } from "@no-notes/db";
-import { eq, like } from "drizzle-orm";
-
 // Initialize the database
 const db = createDb();
 
-// Drizzle implementation of the API functions
+// Exhibition API functions
+export async function getExhibitions(query?: string | null) {
+	let exhibitionList: Exhibition[] = [];
+
+	console.log("query", query);
+
+	if (query) {
+		exhibitionList = await db
+			.select()
+			.from(exhibition)
+			.where(ilike(exhibition.name, `%${query}%`));
+	} else {
+		exhibitionList = await db.select().from(exhibition);
+	}
+
+	// Transform the data to match the expected format
+	const transformedExhibitions: ExhibitionRecord[] = exhibitionList.map(
+		(exhibit) => {
+			return {
+				id: exhibit.id,
+				name: exhibit.name,
+				description: exhibit.description || undefined,
+				start_date: exhibit.start_date
+					? new Date(exhibit.start_date).toISOString()
+					: undefined,
+				end_date: exhibit.end_date
+					? new Date(exhibit.end_date).toISOString()
+					: undefined,
+				private_view_start_date: exhibit.private_view_start_date
+					? new Date(exhibit.private_view_start_date).toISOString()
+					: undefined,
+				private_view_end_date: exhibit.private_view_end_date
+					? new Date(exhibit.private_view_end_date).toISOString()
+					: undefined,
+				created_at: new Date(exhibit.created_at).toISOString(),
+				updated_at: new Date(exhibit.updated_at).toISOString(),
+				gallery_id: exhibit.gallery_id || undefined,
+				url: exhibit.url || undefined,
+				recommended: exhibit.recommended || false,
+			};
+		},
+	);
+
+	console.log("transformedExhibitions", transformedExhibitions);
+
+	return transformedExhibitions.sort(sortBy("name", "start_date"));
+}
+
+export async function getDrizzleExhibition(id: number) {
+	const result = await db
+		.select()
+		.from(exhibition)
+		.where(eq(exhibition.id, id))
+		.limit(1);
+
+	if (!result.length) return null;
+
+	const exhibit = result[0];
+
+	return {
+		id: exhibit.id,
+		name: exhibit.name,
+		description: exhibit.description || undefined,
+		start_date: exhibit.start_date
+			? new Date(exhibit.start_date).toISOString()
+			: undefined,
+		end_date: exhibit.end_date
+			? new Date(exhibit.end_date).toISOString()
+			: undefined,
+		private_view_start_date: exhibit.private_view_start_date
+			? new Date(exhibit.private_view_start_date).toISOString()
+			: undefined,
+		private_view_end_date: exhibit.private_view_end_date
+			? new Date(exhibit.private_view_end_date).toISOString()
+			: undefined,
+		created_at: new Date(exhibit.created_at).toISOString(),
+		updated_at: new Date(exhibit.updated_at).toISOString(),
+		gallery_id: exhibit.gallery_id || undefined,
+		url: exhibit.url || undefined,
+		recommended: exhibit.recommended || false,
+	};
+}
+
+// Contact API functions - keeping these for backward compatibility
 export async function getDrizzleContacts(query?: string | null) {
 	let contactList: (typeof contacts.$inferSelect)[] = [];
 
@@ -36,7 +119,7 @@ export async function getDrizzleContacts(query?: string | null) {
 	}
 
 	// Transform the data to match the expected format
-	const transformedContacts: ContactRecord[] = contactList.map((contact) => {
+	const transformedContacts: ExhibitionRecord[] = contactList.map((contact) => {
 		const [first, ...lastParts] = contact.name.split(" ");
 		const last = lastParts.join(" ");
 
@@ -77,63 +160,39 @@ export async function createDrizzleEmptyContact() {
 	};
 }
 
-export async function getDrizzleContact(id: number) {
-	const contact = await db
-		.select()
-		.from(contacts)
-		.where(eq(contacts.id, id))
-		.limit(1);
-
-	if (!contact.length) return null;
-
-	const [first, ...lastParts] = (contact[0].name || "").split(" ");
-	const last = lastParts.join(" ");
-
-	return {
-		id: contact[0].id,
-		createdAt: new Date(contact[0].created_at).toISOString(),
-		first,
-		last,
-		avatar: contact[0].avatar || undefined,
-		twitter: contact[0].twitter || undefined,
-		notes: contact[0].notes || undefined,
-		favorite: contact[0].favorite || false,
-	};
-}
-
-export async function updateDrizzleContact(
+export async function updateDrizzleExhibition(
 	id: number,
-	updates: ContactMutation,
+	updates: ExhibitionMutation,
 ) {
-	const contact = await getDrizzleContact(id);
-	if (!contact) {
-		throw new Error(`No contact found for ${id}`);
-	}
+	// const exhibition = await getDrizzleExhibition(id);
+	// if (!exhibition) {
+	// 	throw new Error(`No exhibition found for ${id}`);
+	// }
 
-	const updateData: Record<string, string | boolean> = {};
+	const updateData: Record<string, string | boolean | number> = {};
 
-	if (updates.first !== undefined || updates.last !== undefined) {
-		const firstName =
-			updates.first !== undefined ? updates.first : contact.first;
-		const lastName = updates.last !== undefined ? updates.last : contact.last;
-		updateData.name = `${firstName} ${lastName}`.trim();
-	}
+	if (updates.name !== undefined) updateData.name = updates.name;
+	if (updates.description !== undefined)
+		updateData.description = updates.description;
+	if (updates.url !== undefined) updateData.url = updates.url;
+	if (updates.gallery_id !== undefined)
+		updateData.gallery_id = updates.gallery_id;
+	if (updates.recommended !== undefined)
+		updateData.recommended = updates.recommended;
 
-	if (updates.avatar !== undefined) updateData.avatar = updates.avatar;
-	if (updates.twitter !== undefined) updateData.twitter = updates.twitter;
-	if (updates.notes !== undefined) updateData.notes = updates.notes;
-	if (updates.favorite !== undefined) updateData.favorite = updates.favorite;
+	console.log("updateData", updateData);
 
-	await db.update(contacts).set(updateData).where(eq(contacts.id, id));
+	await db.update(exhibition).set(updateData).where(eq(exhibition.id, id));
 
-	return getDrizzleContact(id);
+	return getDrizzleExhibition(id);
 }
 
-export async function deleteDrizzleContact(id: number) {
+export async function deleteDrizzleExhibition(id: number) {
 	await db.delete(contacts).where(eq(contacts.id, id));
 	return null;
 }
 
+// Initialize the database with sample data
 async function initializeDrizzleData() {
 	const existingContacts = await db
 		.select({ count: contacts.id })
@@ -172,12 +231,12 @@ async function initializeDrizzleData() {
 	}
 }
 
-// Initialize the database with sample data
+// Init database (keep for backward compatibility)
 initializeDrizzleData().catch(console.error);
 
 // Export renamed functions to match the original API
 export const getContacts = getDrizzleContacts;
-export const getContact = getDrizzleContact;
+export const getExhibition = getDrizzleExhibition;
 export const createEmptyContact = createDrizzleEmptyContact;
-export const updateContact = updateDrizzleContact;
-export const deleteContact = deleteDrizzleContact;
+export const updateExhibition = updateDrizzleExhibition;
+export const deleteExhibition = deleteDrizzleExhibition;
