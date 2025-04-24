@@ -6,12 +6,14 @@ import {
 	type NewExhibition,
 	type NewExhibitionArtist,
 	type NewGallery,
+	type NewImage,
 	artists,
 	contacts,
 	createDb,
 	exhibition,
 	exhibition_artists,
 	gallery,
+	images,
 } from "./index.js";
 
 // PostgreSQL connection configuration
@@ -91,7 +93,19 @@ async function seed() {
       )
     `);
 
+		// Ensure images table exists with proper schema
+		await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS images (
+        id SERIAL PRIMARY KEY,
+        exhibition_id INT NOT NULL REFERENCES exhibition(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        caption TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+
 		// Clear existing data in proper order to respect foreign keys
+		await db.delete(images);
 		await db.delete(exhibition_artists);
 		await db.delete(exhibition);
 		await db.delete(artists);
@@ -373,6 +387,70 @@ async function seed() {
 			console.log(
 				`Added relationship: Exhibition ${exhibitionMap[relation.exhibition_id]} - Artist ${artistMap[relation.artist_id]}`,
 			);
+		}
+
+		// Sample images data
+		const imagesData = [
+			{
+				exhibition_id: "exhibition-1",
+				image_url:
+					"https://sessionize.com/image/5578-400o400o2-BMT43t5kd2U1XstaNnM6Ax.jpg",
+				caption: "Opening night at Modern Masters",
+			},
+			{
+				exhibition_id: "exhibition-1",
+				image_url:
+					"https://sessionize.com/image/df38-400o400o2-JwbChVUj6V7DwZMc9vJEHc.jpg",
+				caption: "Featured artwork by Jane Smith",
+			},
+			{
+				exhibition_id: "exhibition-1",
+				image_url:
+					"https://sessionize.com/image/124e-400o400o2-wHVdAuNaxi8KJrgtN3ZKci.jpg",
+				caption: "Gallery view of the main hall",
+			},
+			{
+				exhibition_id: "exhibition-2",
+				image_url:
+					"https://sessionize.com/image/1940-400o400o2-Enh9dnYmrLYhJSTTPSw3MH.jpg",
+				caption: "Urban Perspectives installation view",
+			},
+			{
+				exhibition_id: "exhibition-2",
+				image_url:
+					"https://sessionize.com/image/9273-400o400o2-3tyrUE3HjsCHJLU5aUJCja.jpg",
+				caption: "City skyline artwork by John Doe",
+			},
+			{
+				exhibition_id: "exhibition-3",
+				image_url:
+					"https://sessionize.com/image/d14d-400o400o2-pyB229HyFPCnUcZhHf3kWS.png",
+				caption: "Abstract Expressions - main gallery",
+			},
+			{
+				exhibition_id: "exhibition-3",
+				image_url:
+					"https://sessionize.com/image/fd45-400o400o2-fw91uCdGU9hFP334dnyVCr.jpg",
+				caption: "Featured abstract painting by David Kim",
+			},
+			{
+				exhibition_id: "exhibition-3",
+				image_url:
+					"https://sessionize.com/image/b07e-400o400o2-KgNRF3S9sD5ZR4UsG7hG4g.jpg",
+				caption: "Visitors engaging with interactive installation",
+			},
+		];
+
+		// Insert images
+		for (const image of imagesData) {
+			await db.insert(images).values({
+				exhibition_id: exhibitionMap[image.exhibition_id],
+				image_url: image.image_url,
+				caption: image.caption,
+				created_at: new Date(),
+			} satisfies NewImage);
+
+			console.log(`Added image for exhibition: ${image.exhibition_id}`);
 		}
 
 		console.log("Database seeded successfully!");

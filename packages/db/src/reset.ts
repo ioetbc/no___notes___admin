@@ -16,6 +16,9 @@ export async function resetDatabase() {
 		await db.execute(sql`SET session_replication_role = 'replica'`);
 
 		// Drop tables in order to respect foreign key constraints
+		console.log("Dropping images table...");
+		await db.execute(sql`DROP TABLE IF EXISTS images CASCADE`);
+
 		console.log("Dropping exhibition_artists table...");
 		await db.execute(sql`DROP TABLE IF EXISTS exhibition_artists CASCADE`);
 

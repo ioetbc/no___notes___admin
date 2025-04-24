@@ -1,5 +1,4 @@
-import type { SQL } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
 	boolean,
 	integer,
@@ -77,6 +76,29 @@ export const exhibition_artists = pgTable(
 	},
 );
 
+// Define the images table
+export const images = pgTable("images", {
+	id: serial("id").primaryKey(),
+	exhibition_id: integer("exhibition_id")
+		.notNull()
+		.references(() => exhibition.id, { onDelete: "cascade" }),
+	image_url: text("image_url").notNull(),
+	caption: text("caption"),
+	created_at: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Define relations
+export const exhibitionRelations = relations(exhibition, ({ many }) => ({
+	images: many(images),
+}));
+
+export const imagesRelations = relations(images, ({ one }) => ({
+	exhibition: one(exhibition, {
+		fields: [images.exhibition_id],
+		references: [exhibition.id],
+	}),
+}));
+
 // Define types based on the schema
 export type Contact = typeof contacts.$inferSelect;
 export type NewContact = typeof contacts.$inferInsert;
@@ -88,7 +110,5 @@ export type Artist = typeof artists.$inferSelect;
 export type NewArtist = typeof artists.$inferInsert;
 export type ExhibitionArtist = typeof exhibition_artists.$inferSelect;
 export type NewExhibitionArtist = typeof exhibition_artists.$inferInsert;
-
-export function lower(exhibition: Exhibition): SQL {
-	return sql`lower(${exhibition.name})`;
-}
+export type Image = typeof images.$inferSelect;
+export type NewImage = typeof images.$inferInsert;

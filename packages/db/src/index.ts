@@ -17,8 +17,10 @@ export const createDb = () => {
 		connect_timeout: 10,
 	});
 
-	// Create drizzle client
-	return drizzle(client, { schema });
+	// Create drizzle client with relations support
+	return drizzle(client, {
+		schema,
+	});
 };
 
 // Export the schema and types
