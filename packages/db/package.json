@@ -1,0 +1,32 @@
+{
+  "name": "@no-notes/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "db:push": "drizzle-kit push:sqlite",
+    "db:studio": "drizzle-kit studio",
+    "dev": "tsc -w",
+    "generate": "drizzle-kit generate:sqlite",
+    "seed": "tsx src/seed.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.4.0-pre.7",
+    "drizzle-orm": "^0.29.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.20.13", 
+    "tsx": "^4.7.1",
+    "typescript": "^5.7.2"
+  }
+}
