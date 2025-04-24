@@ -1,34 +1,34 @@
 {
-  "name": "@no-notes/db",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "db:push": "drizzle-kit push:pg",
-    "db:generate": "drizzle-kit generate:pg",
-    "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx src/seed.ts",
-    "dev": "tsc -w",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "drizzle-orm": "^0.29.4",
-    "pg": "^8.11.3",
-    "postgres": "^3.4.3"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.10.9",
-    "drizzle-kit": "^0.20.13", 
-    "tsx": "^4.7.1",
-    "typescript": "^5.7.2"
-  }
+	"name": "@no-notes/db",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"db:push": "drizzle-kit push:pg",
+		"db:generate": "drizzle-kit generate:pg",
+		"db:studio": "drizzle-kit studio",
+		"db:seed": "tsx src/seed.ts",
+		"dev": "tsc -w",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.29.4",
+		"pg": "^8.11.3",
+		"postgres": "^3.4.3"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.10.9",
+		"drizzle-kit": "^0.20.13",
+		"tsx": "^4.7.1",
+		"typescript": "^5.7.2"
+	}
 }

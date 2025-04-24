@@ -1,17 +1,17 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "noEmit": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@no-notes/db": ["packages/db/src"]
-    }
-  }
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["DOM", "DOM.Iterable", "ES2022"],
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"jsx": "react-jsx",
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"baseUrl": ".",
+		"paths": {
+			"@no-notes/db": ["packages/db/src"]
+		}
+	}
 }

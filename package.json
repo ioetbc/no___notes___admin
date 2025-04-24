@@ -1,17 +1,21 @@
 {
-  "name": "no-notes-admin",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "typecheck": "turbo typecheck"
-  },
-  "devDependencies": {
-    "turbo": "^1.12.5",
-    "typescript": "^5.7.2"
-  },
-  "engines": {
-    "node": ">=20.0.0"
-  }
+	"name": "no-notes-admin",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "turbo build",
+		"dev": "turbo dev",
+		"typecheck": "turbo typecheck",
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"check": "biome check --apply ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"turbo": "^1.12.5",
+		"typescript": "^5.7.2"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	}
 }
