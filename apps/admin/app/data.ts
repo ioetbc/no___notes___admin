@@ -176,15 +176,14 @@ export async function updateDrizzleExhibition(
 			? new Date(updates.private_view_end_date)
 			: null;
 
-	console.log("updateData", updateData);
-
 	await db.update(exhibition).set(updateData).where(eq(exhibition.id, id));
 
 	return getDrizzleExhibition(id);
 }
 
 export async function deleteDrizzleExhibition(id: number) {
-	await db.delete(contacts).where(eq(contacts.id, id));
+	// With cascade set up in the schema, this will automatically delete related records
+	await db.delete(exhibition).where(eq(exhibition.id, id));
 	return null;
 }
 

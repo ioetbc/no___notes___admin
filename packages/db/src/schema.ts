@@ -64,7 +64,7 @@ export const exhibition_artists = pgTable(
 	{
 		exhibition_id: integer("exhibition_id")
 			.notNull()
-			.references(() => exhibition.id),
+			.references(() => exhibition.id, { onDelete: "cascade" }),
 		artist_id: integer("artist_id")
 			.notNull()
 			.references(() => artists.id),
@@ -97,16 +97,19 @@ export const artistsRelations = relations(artists, ({ many }) => ({
 	exhibitions: many(exhibition_artists),
 }));
 
-export const exhibition_artistsRelations = relations(exhibition_artists, ({ one }) => ({
-	exhibition: one(exhibition, {
-		fields: [exhibition_artists.exhibition_id],
-		references: [exhibition.id],
+export const exhibition_artistsRelations = relations(
+	exhibition_artists,
+	({ one }) => ({
+		exhibition: one(exhibition, {
+			fields: [exhibition_artists.exhibition_id],
+			references: [exhibition.id],
+		}),
+		artist: one(artists, {
+			fields: [exhibition_artists.artist_id],
+			references: [artists.id],
+		}),
 	}),
-	artist: one(artists, {
-		fields: [exhibition_artists.artist_id],
-		references: [artists.id],
-	}),
-}));
+);
 
 export const imagesRelations = relations(images, ({ one }) => ({
 	exhibition: one(exhibition, {

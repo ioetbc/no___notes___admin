@@ -7,7 +7,13 @@ import {
 import type { Route } from "./+types/exhibition";
 
 export async function loader({ params }: Route.LoaderArgs) {
-	const exhibition = await getExhibition(params.exhibitionId);
+	const exhibition_id = Number(params.exhibition_id);
+
+	if (Number.isNaN(exhibition_id)) {
+		throw new Response("Invalid exhibition ID", { status: 400 });
+	}
+
+	const exhibition = await getExhibition(exhibition_id);
 	if (!exhibition) {
 		throw new Response("Not Found", { status: 404 });
 	}
@@ -18,7 +24,6 @@ export async function loader({ params }: Route.LoaderArgs) {
 export default function Exhibition({ loaderData }: Route.ComponentProps) {
 	const { exhibition } = loaderData;
 
-	// Helper functions to format dates
 	const formatDate = (dateString?: string) => {
 		if (!dateString) return "Not set";
 		return new Date(dateString).toLocaleDateString("en-GB", {
@@ -341,10 +346,15 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 	);
 }
 
-// This should be ActionArgs.
-export async function action({ params, request }: Route.LoaderArgs) {
+export async function action({ params, request }: Route.ActionArgs) {
+	const exhibition_id = Number(params.exhibition_id);
+
+	if (Number.isNaN(exhibition_id)) {
+		throw new Response("Invalid exhibition ID", { status: 400 });
+	}
+
 	const formData = await request.formData();
-	return updateExhibition(params.exhibitionId, {
+	return updateExhibition(exhibition_id, {
 		recommended: formData.get("recommended") === "true",
 	});
 }

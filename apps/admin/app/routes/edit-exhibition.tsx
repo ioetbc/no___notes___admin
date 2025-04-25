@@ -10,10 +10,14 @@ import {
 } from "../data";
 import type { Route } from "./+types/exhibition";
 
-// TODO: should be actionArgs
-export async function action({ params, request }: Route.LoaderArgs) {
+export async function action({ params, request }: Route.ActionArgs) {
 	const formData = await request.formData();
 	const intent = formData.get("intent");
+
+	const exhibitionId = Number(params.thing);
+	if (Number.isNaN(exhibitionId)) {
+		throw new Response("Invalid exhibition ID", { status: 400 });
+	}
 
 	if (intent === "deleteImage") {
 		const imageId = formData.get("imageId");
@@ -35,7 +39,7 @@ export async function action({ params, request }: Route.LoaderArgs) {
 
 		if (imageUrl && typeof imageUrl === "string") {
 			await createImage({
-				exhibition_id: Number(params.exhibitionId),
+				exhibition_id: exhibitionId,
 				image_url: imageUrl,
 				caption: caption.toString(),
 			});
@@ -64,8 +68,8 @@ export async function action({ params, request }: Route.LoaderArgs) {
 		).toISOString();
 	}
 
-	await updateExhibition(Number(params.exhibitionId), updates);
-	return redirect(`/exhibitions/${params.exhibitionId}`);
+	await updateExhibition(exhibitionId, updates);
+	return redirect(`/exhibitions/${exhibitionId}`);
 }
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -79,7 +83,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 function ImageEditor({
 	image,
 }: {
-	image: Route.LoaderData["exhibition"]["images"][0];
+	image: Route.ComponentProps["loaderData"]["exhibition"]["images"][0];
 }) {
 	const fetcher = useFetcher();
 
