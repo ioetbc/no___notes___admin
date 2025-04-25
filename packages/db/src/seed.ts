@@ -1,5 +1,3 @@
-import { sql } from "drizzle-orm";
-import postgres from "postgres";
 import {
 	type NewArtist,
 	type NewContact,
@@ -9,102 +7,18 @@ import {
 	type NewImage,
 	artists,
 	contacts,
-	createDb,
+	create_db,
 	exhibition,
 	exhibition_artists,
 	gallery,
 	images,
 } from "./index.js";
 
-// PostgreSQL connection configuration
-const connectionString =
-	process.env.DATABASE_URL ||
-	`postgres://${process.env.DB_USER || "postgres"}:${process.env.DB_PASSWORD || "postgres"}@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "no_notes_admin"}`;
-
-// Use a direct connection for migrations
-const migrationClient = postgres(connectionString, { max: 1 });
-
 async function seed() {
 	console.log("Seeding database with contacts...");
-
-	// Get the regular DB connection for data operations
-	const db = createDb();
+	const db = create_db();
 
 	try {
-		// Ensure contacts table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS contacts (
-        id SERIAL PRIMARY KEY,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        name TEXT NOT NULL,
-        avatar TEXT,
-        twitter TEXT,
-        notes TEXT,
-        favorite BOOLEAN DEFAULT FALSE
-      )
-    `);
-
-		// Ensure gallery table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS gallery (
-        id SERIAL PRIMARY KEY,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        name TEXT NOT NULL,
-        url TEXT NOT NULL,
-        description TEXT,
-        recommended BOOLEAN DEFAULT FALSE
-      )
-    `);
-
-		// Ensure exhibition table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS exhibition (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        start_date DATE,
-        end_date DATE,
-        private_view_start_date DATE,
-        private_view_end_date DATE,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        gallery_id INT REFERENCES gallery(id),
-        url TEXT,
-        recommended BOOLEAN DEFAULT FALSE
-      )
-    `);
-
-		// Ensure artists table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS artists (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        instagram_handle TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `);
-
-		// Ensure exhibition_artists join table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS exhibition_artists (
-        exhibition_id INT NOT NULL REFERENCES exhibition(id),
-        artist_id INT NOT NULL REFERENCES artists(id),
-        PRIMARY KEY (exhibition_id, artist_id)
-      )
-    `);
-
-		// Ensure images table exists with proper schema
-		await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS images (
-        id SERIAL PRIMARY KEY,
-        exhibition_id INT NOT NULL REFERENCES exhibition(id) ON DELETE CASCADE,
-        image_url TEXT NOT NULL,
-        caption TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `);
-
-		// Clear existing data in proper order to respect foreign keys
 		await db.delete(images);
 		await db.delete(exhibition_artists);
 		await db.delete(exhibition);
@@ -458,11 +372,6 @@ async function seed() {
 		console.error("Error inserting data:", error);
 		throw error;
 	} finally {
-		// Close the client
-		if (migrationClient) {
-			await migrationClient.end();
-		}
-		// Exit the process
 		process.exit(0);
 	}
 }

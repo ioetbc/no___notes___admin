@@ -2,6 +2,7 @@
 	"name": "no-notes-admin",
 	"private": true,
 	"type": "module",
+	"packageManager": "pnpm@9.10.0",
 	"scripts": {
 		"build": "turbo build",
 		"dev": "turbo dev",
@@ -12,7 +13,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"turbo": "^1.12.5",
+		"turbo": "^2.5.1",
 		"typescript": "^5.7.2"
 	},
 	"engines": {

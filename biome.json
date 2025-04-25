@@ -8,7 +8,12 @@
 
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": []
+		"ignore": [
+			"**/build/**",
+			"**/dist/**",
+			"**/node_modules/**",
+			"**/public/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,

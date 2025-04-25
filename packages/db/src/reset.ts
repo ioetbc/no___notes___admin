@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
-import { createDb } from "./index.js";
+import { create_db } from "./index.js";
 
 /**
  * Reset all tables in the database by dropping all tables and recreating the schema
  * This ensures clean slate for the database while maintaining the schema integrity
  */
 export async function resetDatabase() {
-	const db = createDb();
+	const db = create_db();
 
 	try {
 		console.log("Starting database reset...");
@@ -46,7 +46,7 @@ export async function resetDatabase() {
 		} catch (e) {
 			console.error("Error re-enabling foreign key constraints:", e);
 		}
-		
+
 		console.error("Error resetting database:", error);
 		throw error;
 	}

@@ -23,16 +23,17 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"dotenv": "^16.5.0",
 		"drizzle-orm": "^0.29.4",
-		"pg": "^8.11.3",
+		"pg": "^8.15.5",
 		"postgres": "^3.4.3"
 	},
 	"devDependencies": {
 		"@swc-node/register": "^1.10.10",
 		"@swc/core": "^1.11.22",
-		"@types/pg": "^8.10.9",
-		"drizzle-kit": "^0.20.13",
-		"tsx": "^4.7.1",
+		"@types/pg": "^8.11.14",
+		"drizzle-kit": "^0.20.18",
+		"tsx": "^4.19.3",
 		"typescript": "^5.7.2"
 	}
 }

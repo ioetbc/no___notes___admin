@@ -35,12 +35,7 @@ This starts your app in development mode, rebuilding assets on file changes.
 The project uses PostgreSQL with Drizzle ORM. Environment variables can be configured in packages/db/.env file:
 
 ```
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/no_notes_admin
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=no_notes_admin
-DB_USER=postgres
-DB_PASSWORD=postgres
+DATABASE_URL=
 ```
 
 Database operations:
