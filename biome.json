@@ -19,8 +19,10 @@
 	},
 	"linter": {
 		"enabled": true,
-
 		"rules": {
+			"complexity": {
+				"noBannedTypes": "off"
+			},
 			"a11y": {
 				"useSemanticElements": "off",
 				"useButtonType": "off"

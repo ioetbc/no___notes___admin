@@ -62,7 +62,9 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
 						<div aria-hidden hidden={!searching} id="search-spinner" />
 					</Form>
 					<Form method="post">
-						<button type="submit">New</button>
+						<button style={{ cursor: "pointer" }} type="submit">
+							New
+						</button>
 					</Form>
 				</div>
 				<nav>

@@ -90,6 +90,22 @@ export const images = pgTable("images", {
 // Define relations
 export const exhibitionRelations = relations(exhibition, ({ many }) => ({
 	images: many(images),
+	artists: many(exhibition_artists),
+}));
+
+export const artistsRelations = relations(artists, ({ many }) => ({
+	exhibitions: many(exhibition_artists),
+}));
+
+export const exhibition_artistsRelations = relations(exhibition_artists, ({ one }) => ({
+	exhibition: one(exhibition, {
+		fields: [exhibition_artists.exhibition_id],
+		references: [exhibition.id],
+	}),
+	artist: one(artists, {
+		fields: [exhibition_artists.artist_id],
+		references: [artists.id],
+	}),
 }));
 
 export const imagesRelations = relations(images, ({ one }) => ({

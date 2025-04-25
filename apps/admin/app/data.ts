@@ -1,8 +1,14 @@
 // @ts-expect-error - no types, but it's a tiny function
 import sortBy from "sort-by";
 
-import { type Exhibition, contacts, createDb, exhibition } from "@no-notes/db";
-import { eq, ilike, like } from "drizzle-orm";
+import {
+	type Exhibition,
+	contacts,
+	createDb,
+	exhibition,
+	images,
+} from "@no-notes/db";
+import { eq, ilike } from "drizzle-orm";
 
 // Type definitions
 type ExhibitionMutation = {
@@ -12,11 +18,17 @@ type ExhibitionMutation = {
 	url?: string;
 	gallery_id?: number;
 	recommended?: boolean;
+	start_date?: string;
+	end_date?: string;
+	private_view_start_date?: string;
+	private_view_end_date?: string;
 };
 
 export type ExhibitionRecord = ExhibitionMutation & {
 	id: number;
 	created_at: string;
+	images?: ImageRecord[];
+	featured_artists?: ArtistRecord[];
 };
 
 // Initialize the database
@@ -25,8 +37,6 @@ const db = createDb();
 // Exhibition API functions
 export async function getExhibitions(query?: string | null) {
 	let exhibitionList: Exhibition[] = [];
-
-	console.log("query", query);
 
 	if (query) {
 		exhibitionList = await db
@@ -71,71 +81,47 @@ export async function getExhibitions(query?: string | null) {
 }
 
 export async function getDrizzleExhibition(id: number) {
-	const result = await db
-		.select()
-		.from(exhibition)
-		.where(eq(exhibition.id, id))
-		.limit(1);
-
-	if (!result.length) return null;
-
-	const exhibit = result[0];
-
-	return {
-		id: exhibit.id,
-		name: exhibit.name,
-		description: exhibit.description || undefined,
-		start_date: exhibit.start_date
-			? new Date(exhibit.start_date).toISOString()
-			: undefined,
-		end_date: exhibit.end_date
-			? new Date(exhibit.end_date).toISOString()
-			: undefined,
-		private_view_start_date: exhibit.private_view_start_date
-			? new Date(exhibit.private_view_start_date).toISOString()
-			: undefined,
-		private_view_end_date: exhibit.private_view_end_date
-			? new Date(exhibit.private_view_end_date).toISOString()
-			: undefined,
-		created_at: new Date(exhibit.created_at).toISOString(),
-		updated_at: new Date(exhibit.updated_at).toISOString(),
-		gallery_id: exhibit.gallery_id || undefined,
-		url: exhibit.url || undefined,
-		recommended: exhibit.recommended || false,
-	};
-}
-
-// Contact API functions - keeping these for backward compatibility
-export async function getDrizzleContacts(query?: string | null) {
-	let contactList: (typeof contacts.$inferSelect)[] = [];
-
-	if (query) {
-		contactList = await db
-			.select()
-			.from(contacts)
-			.where(like(contacts.name, `%${query}%`));
-	} else {
-		contactList = await db.select().from(contacts);
-	}
-
-	// Transform the data to match the expected format
-	const transformedContacts: ExhibitionRecord[] = contactList.map((contact) => {
-		const [first, ...lastParts] = contact.name.split(" ");
-		const last = lastParts.join(" ");
-
-		return {
-			id: contact.id,
-			created_at: new Date(contact.created_at).toISOString(),
-			first,
-			last,
-			avatar: contact.avatar || undefined,
-			twitter: contact.twitter || undefined,
-			notes: contact.notes || undefined,
-			favorite: contact.favorite || false,
-		};
+	// Use the query builder with relations support
+	const result = await db.query.exhibition.findFirst({
+		where: eq(exhibition.id, id),
+		with: {
+			images: true,
+			artists: {
+				with: {
+					artist: true,
+				},
+			},
+		},
 	});
 
-	return transformedContacts.sort(sortBy("last", "createdAt"));
+	if (!result) return null;
+
+	console.log("result wtf", JSON.stringify(result.artists, null, 2));
+
+	return {
+		id: result.id,
+		name: result.name,
+		description: result.description || undefined,
+		start_date: result.start_date
+			? new Date(result.start_date).toISOString()
+			: undefined,
+		end_date: result.end_date
+			? new Date(result.end_date).toISOString()
+			: undefined,
+		private_view_start_date: result.private_view_start_date
+			? new Date(result.private_view_start_date).toISOString()
+			: undefined,
+		private_view_end_date: result.private_view_end_date
+			? new Date(result.private_view_end_date).toISOString()
+			: undefined,
+		created_at: new Date(result.created_at).toISOString(),
+		updated_at: new Date(result.updated_at).toISOString(),
+		gallery_id: result.gallery_id || undefined,
+		url: result.url || undefined,
+		recommended: result.recommended || false,
+		images: result.images,
+		featured_artists: result.artists,
+	};
 }
 
 export async function createDrizzleEmptyContact() {
@@ -164,12 +150,8 @@ export async function updateDrizzleExhibition(
 	id: number,
 	updates: ExhibitionMutation,
 ) {
-	// const exhibition = await getDrizzleExhibition(id);
-	// if (!exhibition) {
-	// 	throw new Error(`No exhibition found for ${id}`);
-	// }
-
-	const updateData: Record<string, string | boolean | number> = {};
+	const updateData: Record<string, string | boolean | number | Date | null> =
+		{};
 
 	if (updates.name !== undefined) updateData.name = updates.name;
 	if (updates.description !== undefined)
@@ -179,6 +161,20 @@ export async function updateDrizzleExhibition(
 		updateData.gallery_id = updates.gallery_id;
 	if (updates.recommended !== undefined)
 		updateData.recommended = updates.recommended;
+	if (updates.start_date !== undefined)
+		updateData.start_date = updates.start_date
+			? new Date(updates.start_date)
+			: null;
+	if (updates.end_date !== undefined)
+		updateData.end_date = updates.end_date ? new Date(updates.end_date) : null;
+	if (updates.private_view_start_date !== undefined)
+		updateData.private_view_start_date = updates.private_view_start_date
+			? new Date(updates.private_view_start_date)
+			: null;
+	if (updates.private_view_end_date !== undefined)
+		updateData.private_view_end_date = updates.private_view_end_date
+			? new Date(updates.private_view_end_date)
+			: null;
 
 	console.log("updateData", updateData);
 
@@ -235,7 +231,100 @@ async function initializeDrizzleData() {
 initializeDrizzleData().catch(console.error);
 
 // Export renamed functions to match the original API
-export const getContacts = getDrizzleContacts;
+// Image API functions
+export type ImageRecord = {
+	id: number;
+	exhibition_id: number;
+	image_url: string;
+	caption?: string;
+	created_at: string;
+};
+
+export type ArtistRecord = {
+	id: number;
+	name: string;
+	instagram_handle?: string;
+	created_at: string;
+};
+
+export type ImageMutation = {
+	exhibition_id: number;
+	image_url: string;
+	caption?: string;
+};
+
+export async function getImagesForExhibition(
+	exhibitionId: number,
+): Promise<ImageRecord[]> {
+	const imageList = await db
+		.select()
+		.from(images)
+		.where(eq(images.exhibition_id, exhibitionId));
+
+	return imageList.map((image) => ({
+		id: image.id,
+		exhibition_id: image.exhibition_id,
+		image_url: image.image_url,
+		caption: image.caption || undefined,
+		created_at: new Date(image.created_at).toISOString(),
+	}));
+}
+
+export async function createImage(data: ImageMutation): Promise<ImageRecord> {
+	const newImage = await db
+		.insert(images)
+		.values({
+			exhibition_id: data.exhibition_id,
+			image_url: data.image_url,
+			caption: data.caption || null,
+			created_at: new Date(),
+		})
+		.returning();
+
+	return {
+		id: newImage[0].id,
+		exhibition_id: newImage[0].exhibition_id,
+		image_url: newImage[0].image_url,
+		caption: newImage[0].caption || undefined,
+		created_at: new Date(newImage[0].created_at).toISOString(),
+	};
+}
+
+export async function updateImage(
+	id: number,
+	updates: Partial<ImageMutation>,
+): Promise<ImageRecord | null> {
+	const updateData: Record<string, string | number | null> = {};
+
+	if (updates.image_url !== undefined) updateData.image_url = updates.image_url;
+	if (updates.caption !== undefined)
+		updateData.caption = updates.caption || null;
+
+	await db.update(images).set(updateData).where(eq(images.id, id));
+
+	const result = await db
+		.select()
+		.from(images)
+		.where(eq(images.id, id))
+		.limit(1);
+
+	if (!result.length) return null;
+
+	const image = result[0];
+	return {
+		id: image.id,
+		exhibition_id: image.exhibition_id,
+		image_url: image.image_url,
+		caption: image.caption || undefined,
+		created_at: new Date(image.created_at).toISOString(),
+	};
+}
+
+export async function deleteImage(id: number): Promise<null> {
+	await db.delete(images).where(eq(images.id, id));
+	return null;
+}
+
 export const getExhibition = getDrizzleExhibition;
 export const createEmptyContact = createDrizzleEmptyContact;
 export const updateExhibition = updateDrizzleExhibition;

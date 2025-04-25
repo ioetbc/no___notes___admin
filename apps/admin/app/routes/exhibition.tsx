@@ -11,13 +11,14 @@ export async function loader({ params }: Route.LoaderArgs) {
 	if (!exhibition) {
 		throw new Response("Not Found", { status: 404 });
 	}
+
 	return { exhibition };
 }
 
 export default function Exhibition({ loaderData }: Route.ComponentProps) {
 	const { exhibition } = loaderData;
 
-	// Helper function to format dates
+	// Helper functions to format dates
 	const formatDate = (dateString?: string) => {
 		if (!dateString) return "Not set";
 		return new Date(dateString).toLocaleDateString("en-GB", {
@@ -27,8 +28,21 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 		});
 	};
 
-	const exhibitionImage =
-		"https://sessionize.com/image/9273-400o400o2-3tyrUE3HjsCHJLU5aUJCja.jpg";
+	const formatDateWithTime = (dateString?: string) => {
+		if (!dateString) return "Not set";
+		return new Date(dateString).toLocaleString("en-GB", {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	};
+
+	const lf = new Intl.ListFormat("en-GB", {
+		style: "long",
+		type: "conjunction",
+	});
 
 	return (
 		<div
@@ -120,20 +134,6 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 						</Form>
 					</div>
 				</div>
-
-				{exhibition.description && (
-					<p
-						className="description"
-						style={{
-							fontSize: "1.1rem",
-							color: "#4a5568",
-							lineHeight: 1.6,
-							margin: 0,
-						}}
-					>
-						{exhibition.description}
-					</p>
-				)}
 			</div>
 
 			<div
@@ -149,15 +149,18 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 						overflow: "hidden",
 					}}
 				>
-					<img
-						alt={`${exhibition.name} exhibition`}
-						src={exhibitionImage}
-						style={{
-							width: "100%",
-							height: "auto",
-							borderRadius: "8px",
-						}}
-					/>
+					{exhibition.images.map((image) => (
+						<img
+							key={image.id}
+							alt={`${exhibition.name} exhibition`}
+							src={image.image_url}
+							style={{
+								width: "100%",
+								height: "auto",
+								borderRadius: "8px",
+							}}
+						/>
+					))}
 				</div>
 
 				<div
@@ -199,7 +202,6 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 							<span>{formatDate(exhibition.end_date)}</span>
 						</div>
 					</div>
-
 					<div
 						style={{
 							background: "#f7fafc",
@@ -226,9 +228,73 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 							}}
 						>
 							<span style={{ fontWeight: 500, color: "#4a5568" }}>Start:</span>
-							<span>{formatDate(exhibition.private_view_start_date)}</span>
+							<span>{formatDateWithTime(exhibition.private_view_start_date)}</span>
 							<span style={{ fontWeight: 500, color: "#4a5568" }}>End:</span>
-							<span>{formatDate(exhibition.private_view_end_date)}</span>
+							<span>{formatDateWithTime(exhibition.private_view_end_date)}</span>
+						</div>
+					</div>
+
+					<div
+						style={{
+							background: "#f7fafc",
+							padding: "1.5rem",
+							borderRadius: "8px",
+							border: "1px solid #e2e8f0",
+						}}
+					>
+						<h2
+							style={{
+								fontSize: "1.25rem",
+								margin: "0 0 1rem 0",
+								fontWeight: 600,
+								color: "#2d3748",
+							}}
+						>
+							Exhibition Description
+						</h2>
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "auto 1fr",
+								gap: "0.5rem 1rem",
+							}}
+						>
+							<span>{exhibition.description}</span>
+						</div>
+					</div>
+
+					<div
+						style={{
+							background: "#f7fafc",
+							padding: "1.5rem",
+							borderRadius: "8px",
+							border: "1px solid #e2e8f0",
+						}}
+					>
+						<h2
+							style={{
+								fontSize: "1.25rem",
+								margin: "0 0 1rem 0",
+								fontWeight: 600,
+								color: "#2d3748",
+							}}
+						>
+							Featured Artists
+						</h2>
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "auto 1fr",
+								gap: "0.5rem 1rem",
+							}}
+						>
+							<span>
+								{exhibition.featured_artists.length > 0
+									? lf.format(
+											exhibition.featured_artists.map((a) => a.artist.name),
+										)
+									: "None"}
+							</span>
 						</div>
 					</div>
 
