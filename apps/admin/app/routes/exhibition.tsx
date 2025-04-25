@@ -228,9 +228,13 @@ export default function Exhibition({ loaderData }: Route.ComponentProps) {
 							}}
 						>
 							<span style={{ fontWeight: 500, color: "#4a5568" }}>Start:</span>
-							<span>{formatDateWithTime(exhibition.private_view_start_date)}</span>
+							<span>
+								{formatDateWithTime(exhibition.private_view_start_date)}
+							</span>
 							<span style={{ fontWeight: 500, color: "#4a5568" }}>End:</span>
-							<span>{formatDateWithTime(exhibition.private_view_end_date)}</span>
+							<span>
+								{formatDateWithTime(exhibition.private_view_end_date)}
+							</span>
 						</div>
 					</div>
 

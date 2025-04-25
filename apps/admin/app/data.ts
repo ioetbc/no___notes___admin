@@ -4,7 +4,7 @@ import sortBy from "sort-by";
 import {
 	type Exhibition,
 	contacts,
-	createDb,
+	create_db,
 	exhibition,
 	images,
 } from "@no-notes/db";
@@ -32,7 +32,7 @@ export type ExhibitionRecord = ExhibitionMutation & {
 };
 
 // Initialize the database
-const db = createDb();
+const db = create_db();
 
 // Exhibition API functions
 export async function getExhibitions(query?: string | null) {
