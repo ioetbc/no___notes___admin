@@ -75,8 +75,6 @@ export async function getExhibitions(query?: string | null) {
 		},
 	);
 
-	console.log("transformedExhibitions", transformedExhibitions);
-
 	return transformedExhibitions.sort(sortBy("name", "start_date"));
 }
 
@@ -95,8 +93,6 @@ export async function getDrizzleExhibition(id: number) {
 	});
 
 	if (!result) return null;
-
-	console.log("result wtf", JSON.stringify(result.artists, null, 2));
 
 	return {
 		id: result.id,
